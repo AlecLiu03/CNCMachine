@@ -4,11 +4,10 @@ import java.util.Arrays;
 public class GcodeCompiler {
     static final double xHome = 0;
     static final double yHome = 0;
-    static final double zUp = 100; // want home z pos to be "UP"
-    static final double xMax = 10; // find out later
-    static final double yMax = 10; // find out later
-    static final double zFloor = 0; // find out later
-    static final double zPaper = 5; // find out later
+    static final double zUp = 19; // want home z pos to be "UP"
+    static final double xMax = 350; // gets stuck on something
+    static final double yMax = 300; // find out later
+    static final double zPaper = 0; // find out later
 
     private static class CircleCoords{
         double x;
@@ -26,20 +25,28 @@ public class GcodeCompiler {
             System.out.printf("ERROR: Coords out of bounds %f %f %f\n", x ,y ,z);
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("G01");
-        if(x >= 0){
-            sb.append(" X" + x);
+        if(x < 0 && y < 0){
+            System.out.printf("G1 Z%d\n", (int) z);
+            return;
+        } else {
+            System.out.printf("G1 X%.4f Y%.4f\n", x, y);
         }
-        if(y >= 0){
-            sb.append(" Y" + y);
-        }
-        if(z >= 0){
-            sb.append(" Z" + z);
-        }
-        System.out.println(sb.toString());
+//        sb.append("G1");
+//        if(x >= 0){
+//            sb.append(" X" + x);
+//        }
+//        if(y >= 0){
+//            sb.append(" Y" + y);
+//        }
+//        if(z >= 0){
+//            sb.append(" Z" + z);
+//        }
+//        System.out.println(sb.toString());
     }
     public static void moveToHome(){
-        System.out.printf("G00 X%f Y%f Z%f\n", xHome, yHome, zUp);
+        System.out.println("G1 Z19");
+        System.out.println("G1 X0 Y0");
+        System.out.println("G1 Z0");
     }
 
     public static void drawLine(double xStart, double yStart, double xEnd, double yEnd){
@@ -142,8 +149,8 @@ public class GcodeCompiler {
         move(-1, -1, zUp);
         move(x + radius, y, -1);
         move(-1, -1, zPaper);
-        System.out.printf("G02 X%f Y%f I%f J%f\n", x - radius, y, -1 * radius, 0.0);
-        System.out.printf("G02 X%f Y%f I%f J%f\n", x + radius, y, radius, 0.0);
+        System.out.printf("G02 X%.4f Y%.4f I%.4f J%.4f\n", x - radius, y, -1 * radius, 0.0);
+        System.out.printf("G02 X%.4f Y%.4f I%.4f J%.4f\n", x + radius, y, radius, 0.0);
         move(-1, -1, zUp);
     }
     public static void drawRandomCircles(int numCircles){
@@ -227,12 +234,12 @@ public class GcodeCompiler {
         double xStart = Math.random() * xMax;
         double yStart = Math.random() * yMax;
         //generate random distance
-        double dist = (Math.random() * 1.2) + .1; // between .1 and 1.3
+        double dist = (Math.random() * 5.0) + 2.5; // between 2.5 and 7.5
 
         while(xStart < dist || xStart > xMax - dist || yStart < dist || yStart > yMax - dist || inCircle(existingCircles, xStart, yStart, dist)){
             xStart = Math.random() * xMax;
             yStart = Math.random() * yMax;
-            dist = (Math.random() * 1.2) + .1;
+            dist = (Math.random() * 5.0) + 2.5;
         }
         drawCenterCircle(xStart, yStart, dist);
         existingCircles.add(new CircleCoords(xStart, yStart, dist));
@@ -243,7 +250,7 @@ public class GcodeCompiler {
             double oldY = existingCircles.get(existingCircles.size() - 1).y;
             double oldR = existingCircles.get(existingCircles.size() - 1).r;
             double randAngle = Math.random() * 2 * Math.PI;
-            double randDist = (Math.random() * 1.2) + .1 + oldR;
+            double randDist = (Math.random() * 5.0) + 2.5 + oldR;
             double newX = oldX + randDist * Math.cos(randAngle);
             double newY = oldY + randDist * Math.sin(randAngle);
             double newRad = randDist - oldR;
@@ -253,7 +260,7 @@ public class GcodeCompiler {
                     return -1 * i;
                 }
                 randAngle = Math.random() * 2 * Math.PI;
-                randDist = (Math.random() * 1.2) + .1 + oldR;
+                randDist = (Math.random() * 5.0) + 2.5 + oldR;
                 newX = oldX + randDist * Math.cos(randAngle);
                 newY = oldY + randDist * Math.sin(randAngle);
                 newRad = randDist - oldR;
@@ -303,13 +310,25 @@ public class GcodeCompiler {
             drawLine(x + offsets[i][0], y + offsets[i][1],x + offsets[i + 1][0], y + offsets[i + 1][1]);
         }
     }
+
+    public static void setup(){
+        System.out.println();
+        System.out.println("G90"); // absolute positioning
+        System.out.println("M03 S1000");
+        System.out.println("G1 Z19 F1000");
+    }
+
+    public static void tearDown(){
+        moveToHome();
+        System.out.println("M05");
+        System.out.println("M02");
+    }
     public static void main(String[] args){
         // System.out.println("Start prog");
-        System.out.println("G90"); // absolute positioning
-        drawSinWave(0, 1);
-
-        System.out.println("M02");
-
+        setup();
+        //drawCenterCircle(10, 10, 10);
+        drawChainingCircles(10, false);
+        tearDown();
         // System.out.println("End prog");
     }
 }
