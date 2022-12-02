@@ -2,13 +2,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class GcodeCompiler {
-    static final double xHome = 0;
-    static final double yHome = 0;
+
+    // max constants for drawing surface
+    static final double xHome = 0; // also xMin
+    static final double yHome = 0; // also yMin
     static final double zUp = 19; // want home z pos to be "UP"
     static final double xMax = 350; // gets stuck on something
-    static final double yMax = 300; // find out later
-    static final double zPaper = 0; // find out later
+    static final double yMax = 300;
+    static final double zPaper = 0;
 
+    // user defined drawing space, by default includes the entire space
+    public static double xLow = xHome;
+    public static double xHigh = xMax;
+    public static double yLow = yHome;
+    public static double yHigh = yMax;
+
+    // used to store information about circle locations - may be expanded to "polygon" in the future
     private static class CircleCoords{
         double x;
         double y;
@@ -20,8 +29,17 @@ public class GcodeCompiler {
         }
     }
 
+    // set drawing area coordinates
+    public static void setDrawingSpace(double xL, double xH, double yL, double yH){
+        xLow = xL;
+        xHigh = xH;
+        yLow = yL;
+        yHigh = yH;
+    }
+
+    // move the drawing instrument to the specified location. Usually used like "move up, move to x-y coord, move down"
     public static void move(double x, double y, double z){ // if any coord is negative, omit
-        if(x > xMax || y > yMax || z > zUp){
+        if(x > xHigh || y > yHigh || z > zUp){
             System.out.printf("ERROR: Coords out of bounds %f %f %f\n", x ,y ,z);
         }
         StringBuilder sb = new StringBuilder();
@@ -31,24 +49,16 @@ public class GcodeCompiler {
         } else {
             System.out.printf("G1 X%.4f Y%.4f\n", x, y);
         }
-//        sb.append("G1");
-//        if(x >= 0){
-//            sb.append(" X" + x);
-//        }
-//        if(y >= 0){
-//            sb.append(" Y" + y);
-//        }
-//        if(z >= 0){
-//            sb.append(" Z" + z);
-//        }
-//        System.out.println(sb.toString());
     }
+
+    // move back to machine starting state
     public static void moveToHome(){
         System.out.println("G1 Z19");
         System.out.println("G1 X0 Y0");
         System.out.println("G1 Z0");
     }
 
+    // draw a line from (xStart, yStart) tp (xEnd, yEnd)
     public static void drawLine(double xStart, double yStart, double xEnd, double yEnd){
         move(-1, -1, zUp);
         move(xStart, yStart, -1);
@@ -56,6 +66,7 @@ public class GcodeCompiler {
         move(xEnd, yEnd, -1);
         move(-1, -1, zUp);
     }
+
     // draw a rectangle with the top left corner at (x,y) with length lenX and width lenY
     public static void drawCornerRectangle(double x, double y, double lenX, double lenY){
         // move to correct position
@@ -93,25 +104,27 @@ public class GcodeCompiler {
         // return to original position
     }
 
-    public static void drawRandomLines(int numberOfLines){
+    // draw a set number of lines randomly on the surface
+    public static void drawRandomLines(int numberOfLines, double minDist, double maxDist){
         for(int i = 0; i < numberOfLines; i++){
             //generate random start
-            double xStart = Math.random() * xMax;
-            double yStart = Math.random() * yMax;
-            //generate random distance
+            double xStart = Math.random() * (xHigh - xLow) + xLow;
+            double yStart = Math.random() * (yHigh - yLow) + yLow;
 
-            double dist = (Math.random() * 5) + 5; // lies between 100 and 200
+            //generate random distance
+            double dist = Math.random() * (maxDist - minDist) + minDist;
+
             //generate random degree
             double radians = (Math.random() * 2 * Math.PI);
-            //generate random end from distance and degree
 
+            //generate random end from distance and degree
             double xEnd = xStart + (dist * Math.cos(radians));
-            while(xEnd < 0 || xEnd > xMax){
+            while(xEnd < xLow || xEnd > xHigh){
                 radians = (Math.random() * 2 * Math.PI);
                 xEnd = xStart + (dist * Math.cos(radians));
             }
             double yEnd = yStart + (dist * Math.sin(radians));
-            while(yEnd < 0 || yEnd > yMax){
+            while(yEnd < yLow || yEnd > yHigh){
                 radians = (Math.random() * 2 * Math.PI);
                 yEnd = yStart + (dist * Math.sin(radians));
             }
@@ -119,23 +132,26 @@ public class GcodeCompiler {
             drawLine(xStart, yStart, xEnd, yEnd);
         }
     }
-    public static void drawSnake(int numberOfLines){
-        double xStart = Math.random() * xMax;
-        double yStart = Math.random() * yMax;
+
+    // draw a set number of lines back to back on the surface
+    public static void drawSnake(int numberOfLines, double minDist, double maxDist){
+        double xStart = Math.random() * (xHigh - xLow) + xLow;
+        double yStart = Math.random() * (yHigh - yLow) + yLow;
         for(int i = 0; i < numberOfLines; i++){
             //generate random distance
-            double dist = (Math.random() * 5) + 5; // lies between 100 and 200
+            double dist = Math.random() * (maxDist - minDist) + minDist;
+
             //generate random degree
             double radians = (Math.random() * 2 * Math.PI);
-            //generate random end from distance and degree
 
+            //generate random end from distance and degree
             double xEnd = xStart + (dist * Math.cos(radians));
-            while(xEnd < 0 || xEnd > xMax){
+            while(xEnd < xLow || xEnd > xHigh){
                 radians = (Math.random() * 2 * Math.PI);
                 xEnd = xStart + (dist * Math.cos(radians));
             }
             double yEnd = yStart + (dist * Math.sin(radians));
-            while(yEnd < 0 || yEnd > yMax){
+            while(yEnd < xLow || yEnd > yHigh){
                 radians = (Math.random() * 2 * Math.PI);
                 yEnd = yStart + (dist * Math.sin(radians));
             }
@@ -145,7 +161,12 @@ public class GcodeCompiler {
             yStart = yEnd;
         }
     }
+
+    // draw a circle based on a center point and radius
     public static void drawCenterCircle(double x, double y, double radius){
+        if (x < (radius + xLow) || x > xHigh - radius || y < (radius + yLow) || y > yHigh - radius){
+            System.out.println("ERROR: Center circle out of bounds");
+        }
         move(-1, -1, zUp);
         move(x + radius, y, -1);
         move(-1, -1, zPaper);
@@ -153,36 +174,47 @@ public class GcodeCompiler {
         System.out.printf("G02 X%.4f Y%.4f I%.4f J%.4f\n", x + radius, y, radius, 0.0);
         move(-1, -1, zUp);
     }
-    public static void drawRandomCircles(int numCircles){
+
+    // draw a set number of circles randomly on the paper
+    public static void drawRandomCircles(int numCircles, double minRad, double maxRad){
         for(int i = 0; i < numCircles; i++){
             //generate random start
-            double xStart = Math.random() * xMax;
-            double yStart = Math.random() * yMax;
+            double xStart = Math.random() * (xHigh - xLow) + xLow;
+            double yStart = Math.random() * (yHigh - yLow) + yLow;
+
             //generate random distance
-            double dist = (Math.random() * 1.2) + .1; // lies between 100 and 20;
-            while(xStart < dist || xStart > xMax - dist){
-                xStart = Math.random() * xMax;
-            }
-            while(yStart < dist || yStart > yMax - dist){
-                yStart = Math.random() * yMax;
+            double dist = Math.random() * (maxRad - minRad) + minRad;
+
+            while(xStart < (dist + xLow) || xStart > xHigh - dist || yStart < (dist + yLow) || yStart > yHigh - dist) {
+                xStart = Math.random() * (xHigh - xLow) + xLow;
+                yStart = Math.random() * (yHigh - yLow) + yLow;
+                dist = Math.random() * (maxRad - minRad) + minRad;
             }
             drawCenterCircle(xStart, yStart, dist);
         }
     }
+
+    // draw an even distribution of tangent circles on the paper based on radius
     public static void drawGridCircles(double radius){
-        for(double i = radius; i < xMax; i += 2 * radius){
-            for(double j = radius; j < yMax; j += 2 * radius){
+        for(double i = xLow + radius; i < xHigh; i += 2 * radius){
+            for(double j = yLow + radius; j < yHigh; j += 2 * radius){
                 drawCenterCircle(i, j, radius);
             }
         }
     }
+
+    // draw an even distribution of circles, but each border passes through the center of neighboring circles
     public static void drawGridOverlapCircles(double radius){
-        for(double i = radius; i < xMax; i += radius){
-            for(double j = radius; j < yMax; j += radius){
+        for(double i = xLow + radius; i < xHigh; i += radius){
+            for(double j = yLow + radius; j < yHigh; j += radius){
                 drawCenterCircle(i, j, radius);
             }
         }
     }
+
+    // HELPER FUNCTIONS FOR CIRCLE DRAWING
+
+    // produce an approximate border of a circle
     public static double[][] produceEdgeCoords(double x, double y, double r){
         double[][] ans = new double[360][2];
         for(int i = 0; i < 360; i++){ //for every degree
@@ -192,6 +224,8 @@ public class GcodeCompiler {
         }
         return ans;
     }
+
+    // determine if a given circle overlaps with a list of existing circles
     public static boolean inCircle(ArrayList<CircleCoords> existing, double x, double y, double r){
         double[][] circleEdges = produceEdgeCoords(x, y, r);
         for(CircleCoords c : existing){ // for every existing circle
@@ -210,36 +244,43 @@ public class GcodeCompiler {
         }
         return false;
     }
-    public static void fillAreaWithNonOverlappingCircles(int numberOfCircles){
+
+    // END HELPER FUNCTIONS
+
+    // attempt to fill an area with a set number of circles
+    public static void fillAreaWithNonOverlappingCircles(int numberOfCircles, int minRad, int maxRad){
         ArrayList<CircleCoords> existingCircles = new ArrayList<>();
         for(int i = 0; i < numberOfCircles; i++){
             //generate random start
-            double xStart = Math.random() * xMax;
-            double yStart = Math.random() * yMax;
-            //generate random distance
-            double dist = (Math.random() * 1.2) + .1; // between .1 and 1.3
+            double xStart = Math.random() * (xHigh - xLow) + xLow;
+            double yStart = Math.random() * (yHigh - yLow) + yLow;
 
-            while(xStart < dist || xStart > xMax - dist || yStart < dist || yStart > yMax - dist || inCircle(existingCircles, xStart, yStart, dist)){
-                xStart = Math.random() * xMax;
-                yStart = Math.random() * yMax;
-                dist = (Math.random() * 1.2) + .1;
+            //generate random distance
+            double dist = Math.random() * (maxRad - minRad) + minRad;
+
+            while(xStart < (dist + xLow) || xStart > xHigh - dist || yStart < (dist + yLow) || yStart > yHigh - dist || inCircle(existingCircles, xStart, yStart, dist)){
+                xStart = Math.random() * (xHigh - xLow) + xLow;
+                yStart = Math.random() * (yHigh - yLow) + yLow;
+                dist = Math.random() * (maxRad - minRad) + minRad;
             }
             drawCenterCircle(xStart, yStart, dist);
             existingCircles.add(new CircleCoords(xStart, yStart, dist));
         }
     }
-    public static int drawChainingCircles(int numberOfCircles, boolean debugOn){
+
+    // attempt to draw a set number of circles that are tangent and non-overlapping
+    public static int drawChainingCircles(int numberOfCircles, boolean debugOn, double minRad, double maxRad){
         ArrayList<CircleCoords> existingCircles = new ArrayList<>();
         // FIRST ITERATION
-        double xStart = Math.random() * xMax;
-        double yStart = Math.random() * yMax;
+        double xStart = Math.random() * (xHigh - xLow) + xLow;
+        double yStart = Math.random() * (yHigh - yLow) + yLow;
         //generate random distance
-        double dist = (Math.random() * 5.0) + 2.5; // between 2.5 and 7.5
+        double dist = Math.random() * (maxRad - minRad) + minRad;
 
-        while(xStart < dist || xStart > xMax - dist || yStart < dist || yStart > yMax - dist || inCircle(existingCircles, xStart, yStart, dist)){
-            xStart = Math.random() * xMax;
-            yStart = Math.random() * yMax;
-            dist = (Math.random() * 5.0) + 2.5;
+        while(xStart < (dist + xLow) || xStart > xHigh - dist || yStart < (dist + yLow) || yStart > yHigh - dist || inCircle(existingCircles, xStart, yStart, dist)){
+            xStart = Math.random() * (xHigh - xLow) + xLow;
+            yStart = Math.random() * (yHigh - yLow) + yLow;
+            dist = Math.random() * (maxRad - minRad) + minRad;
         }
         drawCenterCircle(xStart, yStart, dist);
         existingCircles.add(new CircleCoords(xStart, yStart, dist));
@@ -250,17 +291,18 @@ public class GcodeCompiler {
             double oldY = existingCircles.get(existingCircles.size() - 1).y;
             double oldR = existingCircles.get(existingCircles.size() - 1).r;
             double randAngle = Math.random() * 2 * Math.PI;
-            double randDist = (Math.random() * 5.0) + 2.5 + oldR;
+            double randDist = Math.random() * (maxRad - minRad) + minRad + oldR;
             double newX = oldX + randDist * Math.cos(randAngle);
             double newY = oldY + randDist * Math.sin(randAngle);
             double newRad = randDist - oldR;
             int tryCounter = 0;
-            while(newX < newRad || newX > xMax - newRad || newY < newRad || newY > yMax - newRad || inCircle(existingCircles, newX, newY, newRad)){
+            while(newX < newRad + xLow || newX > xHigh - newRad || newY < newRad + yLow || newY > yHigh - newRad || inCircle(existingCircles, newX, newY, newRad)){
                 if(tryCounter > 10000){
+                    System.out.println("Couldn't fit all circles in bounds!");
                     return -1 * i;
                 }
                 randAngle = Math.random() * 2 * Math.PI;
-                randDist = (Math.random() * 5.0) + 2.5 + oldR;
+                randDist = Math.random() * (maxRad - minRad) + minRad + oldR;;
                 newX = oldX + randDist * Math.cos(randAngle);
                 newY = oldY + randDist * Math.sin(randAngle);
                 newRad = randDist - oldR;
@@ -275,6 +317,8 @@ public class GcodeCompiler {
         }
         return numberOfCircles;
     }
+
+    // draw a honeycomb distribution across the page - not area bounded
     public static void drawHoneycomb(double sideLength){
         int numRows = (int) (xMax / (Math.sqrt(3) * sideLength));
         int numCols = (int) (yMax / (3 * sideLength));
@@ -297,6 +341,8 @@ public class GcodeCompiler {
             }
         }
     }
+
+    // draw a sin wave - not area bounded
     public static void drawSinWave(double x, double y){
         move(x, y, -1);
         double[][] offsets = new double[101][2];
@@ -311,6 +357,29 @@ public class GcodeCompiler {
         }
     }
 
+    // HELPER FUNCTIONS PERIPHERAL FUNCTIONS
+
+    // draw marks along the y-axis
+    public static void drawYHash(){
+        for(int i = 0; i <= yMax; i += 20){
+            move(-1, -1, zUp);
+            move(10, i, -1);
+            move(-1, -1, zPaper);
+            move(0, i, -1);
+        }
+    }
+
+    // draw marks along the x-axis
+    public static void drawXHash(){
+        for(int i = 20; i < xMax; i += 20){
+            move(-1, -1, zUp);
+            move(i, 5, -1);
+            move(-1, -1, zPaper);
+            move(i, 0, -1);
+        }
+    }
+
+    // print out G-code initialization
     public static void setup(){
         System.out.println();
         System.out.println("G90"); // absolute positioning
@@ -318,17 +387,20 @@ public class GcodeCompiler {
         System.out.println("G1 Z19 F1000");
     }
 
+    // print out clean up G-code
     public static void tearDown(){
         moveToHome();
         System.out.println("M05");
         System.out.println("M02");
     }
+
+    // END HELPER FUNCTIONS
+
+
     public static void main(String[] args){
-        // System.out.println("Start prog");
+        setDrawingSpace(10, 20, 10, 20);
         setup();
-        //drawCenterCircle(10, 10, 10);
-        drawChainingCircles(10, false);
+        drawChainingCircles(10, false, 1, 2);
         tearDown();
-        // System.out.println("End prog");
     }
 }
