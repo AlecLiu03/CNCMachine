@@ -17,7 +17,7 @@ public class GcodeCompiler {
     public static double yLow = yHome;
     public static double yHigh = yMax;
 
-    // used to store information about circle locations - may be expanded to "polygon" in the future
+    // used to store information about circle locations - may be expanded to be "polygon" in the future
     private static class CircleCoords{
         double x;
         double y;
@@ -31,6 +31,10 @@ public class GcodeCompiler {
 
     // set drawing area coordinates
     public static void setDrawingSpace(double xL, double xH, double yL, double yH){
+        if(xL < xHome || xH > xMax || yL < yHome || yH > yMax){
+            System.out.println("User defined drawing space is out of bounds, proceeding with default values");
+            return;
+        }
         xLow = xL;
         xHigh = xH;
         yLow = yL;
@@ -185,6 +189,7 @@ public class GcodeCompiler {
             //generate random distance
             double dist = Math.random() * (maxRad - minRad) + minRad;
 
+            // while this x,y, dist combo is invalid, retry
             while(xStart < (dist + xLow) || xStart > xHigh - dist || yStart < (dist + yLow) || yStart > yHigh - dist) {
                 xStart = Math.random() * (xHigh - xLow) + xLow;
                 yStart = Math.random() * (yHigh - yLow) + yLow;
@@ -212,7 +217,7 @@ public class GcodeCompiler {
         }
     }
 
-    // HELPER FUNCTIONS FOR CIRCLE DRAWING
+    // HELPER FUNCTIONS - CIRCLE DRAWING
 
     // produce an approximate border of a circle
     public static double[][] produceEdgeCoords(double x, double y, double r){
@@ -258,6 +263,7 @@ public class GcodeCompiler {
             //generate random distance
             double dist = Math.random() * (maxRad - minRad) + minRad;
 
+            // while this x,y, dist combo is invalid, retry
             while(xStart < (dist + xLow) || xStart > xHigh - dist || yStart < (dist + yLow) || yStart > yHigh - dist || inCircle(existingCircles, xStart, yStart, dist)){
                 xStart = Math.random() * (xHigh - xLow) + xLow;
                 yStart = Math.random() * (yHigh - yLow) + yLow;
@@ -277,6 +283,7 @@ public class GcodeCompiler {
         //generate random distance
         double dist = Math.random() * (maxRad - minRad) + minRad;
 
+        // while this x,y, dist combo is invalid, retry
         while(xStart < (dist + xLow) || xStart > xHigh - dist || yStart < (dist + yLow) || yStart > yHigh - dist || inCircle(existingCircles, xStart, yStart, dist)){
             xStart = Math.random() * (xHigh - xLow) + xLow;
             yStart = Math.random() * (yHigh - yLow) + yLow;
@@ -296,6 +303,8 @@ public class GcodeCompiler {
             double newY = oldY + randDist * Math.sin(randAngle);
             double newRad = randDist - oldR;
             int tryCounter = 0;
+
+            // while this x,y, dist combo is invalid, retry - might get stuck and have to bail out
             while(newX < newRad + xLow || newX > xHigh - newRad || newY < newRad + yLow || newY > yHigh - newRad || inCircle(existingCircles, newX, newY, newRad)){
                 if(tryCounter > 10000){
                     System.out.println("Couldn't fit all circles in bounds!");
@@ -309,6 +318,7 @@ public class GcodeCompiler {
                 tryCounter++;
             }
             drawCenterCircle(newX, newY, newRad);
+
             //for debugging purposes
             if(debugOn){
                 drawLine(oldX, oldY, newX, newY);
@@ -357,7 +367,7 @@ public class GcodeCompiler {
         }
     }
 
-    // HELPER FUNCTIONS PERIPHERAL FUNCTIONS
+    // HELPER FUNCTIONS - PERIPHERAL FUNCTIONS
 
     // draw marks along the y-axis
     public static void drawYHash(){
@@ -396,11 +406,10 @@ public class GcodeCompiler {
 
     // END HELPER FUNCTIONS
 
-
     public static void main(String[] args){
-        setDrawingSpace(10, 20, 10, 20);
+        setDrawingSpace(-10, 20, 10, 20);
         setup();
-        drawChainingCircles(10, false, 1, 2);
+        drawRandomLines(10, 1, 100);
         tearDown();
     }
 }
