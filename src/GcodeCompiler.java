@@ -123,16 +123,45 @@ public class GcodeCompiler {
 
             //generate random end from distance and degree
             double xEnd = xStart + (dist * Math.cos(radians));
-            while(xEnd < xLow || xEnd > xHigh){
+            double yEnd = yStart + (dist * Math.sin(radians));
+            while(xEnd < xLow || xEnd > xHigh || yEnd < yLow || yEnd > yHigh){
                 radians = (Math.random() * 2 * Math.PI);
                 xEnd = xStart + (dist * Math.cos(radians));
-            }
-            double yEnd = yStart + (dist * Math.sin(radians));
-            while(yEnd < yLow || yEnd > yHigh){
-                radians = (Math.random() * 2 * Math.PI);
                 yEnd = yStart + (dist * Math.sin(radians));
             }
             //draw the line
+            drawLine(xStart, yStart, xEnd, yEnd);
+        }
+    }
+
+    // draw a set number of lines randomly on the surface, this time angle bounded
+    public static void drawRandomLinesWithAngleBounds(int numberOfLines, double minDist, double maxDist, double minAngle, double maxAngle){
+        for(int i = 0; i < numberOfLines; i++){
+            //generate random start
+            double xStart = Math.random() * (xHigh - xLow) + xLow;
+            double yStart = Math.random() * (yHigh - yLow) + yLow;
+
+            //generate random distance
+            double dist = Math.random() * (maxDist - minDist) + minDist;
+
+            //generate random degree
+            double degrees = Math.random() * (maxAngle - minAngle) + minAngle;
+            double radians = (degrees / 360 * 2 * Math.PI);
+
+            //generate random end from distance and degree
+            double xEnd = xStart + (dist * Math.cos(radians));
+            double yEnd = yStart + (dist * Math.sin(radians));
+            while(xEnd < xLow || xEnd > xHigh || yEnd < yLow || yEnd > yHigh){
+                degrees = Math.random() * (maxAngle - minAngle) + minAngle;
+                radians = (degrees / 360 * 2 * Math.PI);
+                xStart = Math.random() * (xHigh - xLow) + xLow;
+                yStart = Math.random() * (yHigh - yLow) + yLow;
+                xEnd = xStart + (dist * Math.cos(radians));
+                yEnd = yStart + (dist * Math.sin(radians));
+            }
+            //draw the line
+            System.out.println("Generateed angle " + degrees);
+
             drawLine(xStart, yStart, xEnd, yEnd);
         }
     }
@@ -407,9 +436,9 @@ public class GcodeCompiler {
     // END HELPER FUNCTIONS
 
     public static void main(String[] args){
-        setDrawingSpace(-10, 20, 10, 20);
+        setDrawingSpace(80, 300, 40, 220);
         setup();
-        drawRandomLines(10, 1, 100);
+        drawRandomLinesWithAngleBounds(30, 25.4, 27.8, 90, 180);
         tearDown();
     }
 }
