@@ -1,5 +1,6 @@
+// Written by Alec Liu at Duke University, Fall 2022
+
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class GcodeCompiler {
 
@@ -160,7 +161,7 @@ public class GcodeCompiler {
                 yEnd = yStart + (dist * Math.sin(radians));
             }
             //draw the line
-            System.out.println("Generateed angle " + degrees);
+            //System.out.println("Generateed angle " + degrees);
 
             drawLine(xStart, yStart, xEnd, yEnd);
         }
@@ -436,9 +437,11 @@ public class GcodeCompiler {
     // END HELPER FUNCTIONS
 
     public static void main(String[] args){
-        setDrawingSpace(80, 300, 40, 220);
+        setDrawingSpace(80, 280, 60, 220);
         setup();
-        drawRandomLinesWithAngleBounds(30, 25.4, 27.8, 90, 180);
+
+        drawRandomLinesWithAngleBounds(30, 25.4, 27.8, 80, 100);
+
         tearDown();
     }
 }
