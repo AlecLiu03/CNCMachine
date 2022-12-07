@@ -1,5 +1,15 @@
-// Written by Alec Liu at Duke University, Fall 2022
+/* Written by Alec Liu at Duke University, Fall 2022
 
+  Usage
+  Following the template provided in the main function:
+  1. Set the boundary space with the "setDrawingSpace" function
+  2. Call the setup function to print out some settings-related G-code
+  3. Build your drawing with any combination of methods provided
+  4. Call the tearDown function to print out cleanup related G-code
+  5. Copy the console output into a blank Notepad file (not including the first line "/Library/Java/...")
+  6. Save the file as (name here).nc
+  7. Run the file on the CNC Machine
+ */
 import java.util.ArrayList;
 
 public class GcodeCompiler {
@@ -440,7 +450,7 @@ public class GcodeCompiler {
         setDrawingSpace(80, 280, 60, 220);
         setup();
 
-        drawRandomLinesWithAngleBounds(30, 25.4, 27.8, 80, 100);
+        drawChainingCircles(8, false, 10, 35);
 
         tearDown();
     }
