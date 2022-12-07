@@ -447,11 +447,16 @@ public class GcodeCompiler {
     // END HELPER FUNCTIONS
 
     public static void main(String[] args){
+        // set the drawing bounds (xL = x low, xH = x high, yL = y low, yH = y high)
         setDrawingSpace(80, 280, 60, 220);
+
+        // basic setup function (always call this here)
         setup();
 
+        // add your drawing here - combinations of methods
         drawChainingCircles(8, false, 10, 35);
 
+        // basic tear down function (always call this here)
         tearDown();
     }
 }
