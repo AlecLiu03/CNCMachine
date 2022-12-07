@@ -454,7 +454,7 @@ public class GcodeCompiler {
         setup();
 
         // add your drawing here - combinations of methods
-        drawChainingCircles(8, false, 10, 35);
+        drawChainingCircles(100, false, 5, 20);
 
         // basic tear down function (always call this here)
         tearDown();
