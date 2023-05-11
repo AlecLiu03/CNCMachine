@@ -44,17 +44,3 @@ jobs:
               fi
             fi
           fi
-      - name: Send email notification
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-          from: gcoderepomanager@gmail.com
-          to: alec.liu092@gmail.com
-          subject: My workflow completed successfully
-          body: |
-            Hi there,
-
-            Just letting you know that my workflow completed successfully!
