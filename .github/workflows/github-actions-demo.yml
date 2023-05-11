@@ -47,10 +47,11 @@ jobs:
       - name: Send email notification
         uses: dawidd6/action-send-mail@v3
         with:
-          smtp_server: smtp.gmail.com
-          smtp_port: 587
-          smtp_username: ${{ secrets.SMTP_USERNAME }}
-          smtp_password: ${{ secrets.SMTP_PASSWORD }}
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          from: gcoderepomanager@gmail.com
           to: alec.liu092@gmail.com
           subject: My workflow completed successfully
           body: |
