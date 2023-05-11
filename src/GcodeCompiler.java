@@ -115,8 +115,6 @@ public class GcodeCompiler {
         move(startX, startY, -1);
         move(-1, -1, zUp);
         move(x, y, -1);
-
-        // return to original position
     }
 
     // draw a set number of lines randomly on the surface
@@ -454,7 +452,7 @@ public class GcodeCompiler {
         setup();
 
         // add your drawing here - combinations of methods
-        drawChainingCircles(100, false, 5, 20);
+        drawChainingCircles(20, false, 5, 20);
 
         // basic tear down function (always call this here)
         tearDown();
