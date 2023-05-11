@@ -21,3 +21,26 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
+
+    test:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Debug info
+          run: echo "Workflow triggered"
+        - name: Checkout code
+          uses: actions/checkout@v2
+        - name: Run tests
+          run: |
+            # your test command here
+        - name: Check status
+          if: always()
+          run: |
+            if [[ ${{ github.event_name }} == 'pull_request' ]]; then
+              if [[ ${{ github.event.action }} == 'opened' ]]; then
+                pr_commit_status="$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" ${GITHUB_API_URL}/repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }}/status | jq -r '.state')"
+                if [[ $pr_commit_status == 'failure' ]]; then
+                  echo "The workflow has failed!"
+                  exit 1
+                fi
+              fi
+            fi
