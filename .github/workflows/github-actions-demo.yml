@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - V2
+    types:
+      - opened
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
