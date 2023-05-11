@@ -1,9 +1,11 @@
 name: GitHub Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on:
-  push:
+  pull_request:
     branches:
-      -V2
+      - V2
+    types:
+      - opened
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
@@ -19,3 +21,40 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug info
+        run: echo "Workflow triggered"
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Run tests
+        run: |
+          # your test command here
+      - name: Check status
+        if: always()
+        run: |
+          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
+            if [[ ${{ github.event.action }} == 'opened' ]]; then
+              pr_commit_status="$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" ${GITHUB_API_URL}/repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }}/status | jq -r '.state')"
+              if [[ $pr_commit_status == 'failure' ]]; then
+                echo "The workflow has failed!"
+                exit 1
+              fi
+            fi
+          fi
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          from: gcoderepomanager@gmail.com
+          to: alec.liu092@gmail.com
+          subject: My workflow completed successfully
+          body: |
+            Hi there,
+
+            Just letting you know that my workflow completed successfully!
