@@ -8,4 +8,16 @@ pipeline {
             }
         }
     }
+    post {
+        success {
+            mail to: 'alec.liu092@gmail.com',
+                 subject: 'Successful Pipeline: ${currentBuild.fullDisplayName}',
+                 body: 'Successful build!'
+        }
+        failure {
+            mail to: 'alec.liu092@gmail.com',
+                 subject: "Failed Pipeline: ${currentBuild.fullDisplayName}",
+                 body: "Something is wrong with ${env.BUILD_URL}"
+        }
+    }
 }
