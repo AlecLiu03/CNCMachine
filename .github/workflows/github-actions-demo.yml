@@ -44,3 +44,16 @@ jobs:
               fi
             fi
           fi
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          smtp_server: smtp.gmail.com
+          smtp_port: 587
+          smtp_username: ${{ secrets.SMTP_USERNAME }}
+          smtp_password: ${{ secrets.SMTP_PASSWORD }}
+          to: alec.liu092@gmail.com
+          subject: My workflow completed successfully
+          body: |
+            Hi there,
+
+            Just letting you know that my workflow completed successfully!
